@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "362157345949",
+    "project_id": "mascota-virtual-a5572",
+    "storage_bucket": "mascota-virtual-a5572.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362157345949:android:a5341de2e9209d06ce9874",
+        "android_client_info": {
+          "package_name": "com.example.animation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDTNJxOf50Cwe-LB_-pjEz3RCE3QbE3PE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

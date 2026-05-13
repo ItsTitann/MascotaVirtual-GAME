@@ -3,288 +3,155 @@ package com.example.animation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
-import kotlinx.coroutines.delay
-import kotlin.random.Random
-
-/**
- * REQUISITOS EN drawable:
- * - background_day
- * - background_night
- * - seal_open, seal_half, seal_closed
- * - seal_sleep_1, seal_sleep_2
- * - seal_tired, seal_yawn_1, seal_yawn_2
- * - icon_energy_outline
- * - lamp_on
- * - lamp_off
- */
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.animation.data.local.PrefsManager
+import com.example.animation.data.model.PetData
+import com.example.animation.data.repository.PetRepository
+import com.example.animation.ui.screens.MainGameScreen
+import com.example.animation.ui.screens.NameScreen
+import com.example.animation.ui.screens.StartScreen
+import com.google.firebase.database.ServerValue
 
 class MainActivity : ComponentActivity() {
+    private val petRepository = PetRepository()
+    private lateinit var prefsManager: PrefsManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MainScreen() }
+        prefsManager = PrefsManager(this)
+        
+        setContent {
+            AppNavigation(petRepository, prefsManager)
+        }
     }
 }
 
 @Composable
-fun MainScreen() {
-    var isNight by remember { mutableStateOf(false) }
-    var energy by remember { mutableStateOf(0) } // 0..100
+fun AppNavigation(petRepository: PetRepository, prefsManager: PrefsManager) {
+    val navController = rememberNavController()
+    
+    // Estados globales del juego
+    var petData by remember { mutableStateOf<PetData?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
 
-    // ✅ +1 cada 1s si duerme, -1 cada 5s si NO duerme (mantiene energía al alternar)
-    LaunchedEffect(isNight) {
-        if (isNight) {
-            while (isNight) {
-                delay(1000)
-                if (energy < 100) energy += 1
+    // Al iniciar, escuchamos los cambios de Firebase en tiempo real
+    LaunchedEffect(Unit) {
+        val savedId = prefsManager.getPetId()
+        if (savedId != null) {
+            petRepository.observePet(savedId) { data ->
+                petData = data
+                isLoading = false
             }
         } else {
-            while (!isNight) {
-                delay(5000)
-                if (energy > 0) energy -= 1
+            isLoading = false
+        }
+    }
+
+    // Loop Global del Juego (Movido aquí para evitar reinicios de navegación)
+    // Usamos el ID de la mascota como clave única del efecto
+    val petIdForLoop = petData?.id
+    LaunchedEffect(petIdForLoop) {
+        if (petIdForLoop == null) return@LaunchedEffect
+        
+        var ticks = 0
+        while (true) {
+            kotlinx.coroutines.delay(5000)
+            ticks++
+            
+            // IMPORTANTE: Obtenemos la versión más reciente de petData en cada ciclo
+            val current = petData ?: continue
+            val updates = mutableMapOf<String, Any>()
+            
+            if (current.sleeping) {
+                android.util.Log.d("GameLoop", "Pet is sleeping. Energy: ${current.energy}")
+                // MODO SUEÑO: Sube energía y PAUSA todo desgaste de energía
+                if (current.energy < 100) {
+                    updates["energy"] = current.energy + 1
+                    android.util.Log.d("GameLoop", "Adding energy update to map")
+                }
+            } else {
+                // MODO DESPIERTO: Baja energía cada 10 segundos
+                if (ticks % 2 == 0 && current.energy > 0) {
+                    updates["energy"] = current.energy - 1
+                }
             }
+
+            if (ticks % 2 == 0 && current.hunger > 0) updates["hunger"] = current.hunger - 1
+            if (ticks % 3 == 0 && current.hygiene > 0) updates["hygiene"] = current.hygiene - 1
+            if (ticks % 2 == 0 && current.funLevel > 0) updates["funLevel"] = current.funLevel - 1
+
+            if (ticks % 2 == 0) {
+                if (current.hunger < 20 || current.hygiene < 20 || current.energy < 15) {
+                    if (current.health > 0) updates["health"] = current.health - 1
+                }
+            }
+
+            if (updates.isNotEmpty()) {
+                petRepository.updatePet(current.id, updates)
+            }
+            if (ticks > 12) ticks = 0
         }
     }
 
-    val backgroundRes = if (isNight) R.drawable.background_night else R.drawable.background_day
-
-    val overlayAlpha by animateFloatAsState(
-        targetValue = if (isNight) 0.45f else 0f,
-        animationSpec = tween(900),
-        label = "overlayAlpha"
-    )
-
-    val lampScale by animateFloatAsState(
-        targetValue = if (isNight) 1.02f else 1f,
-        animationSpec = tween(180),
-        label = "lampScale"
-    )
-
-    Box(modifier = Modifier.fillMaxSize()) {
-
-        Image(
-            painter = painterResource(backgroundRes),
-            contentDescription = "Fondo",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = overlayAlpha))
-        )
-
-        EnergyIconFill(
-            energy = energy,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        )
-
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-
-            // 🦭 FOCA (posición fija)
-            SealPet(
-                isSleeping = isNight,
-                energy = energy,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .size(600.dp)
-                    .padding(bottom = 100.dp) // 👈 controla la altura fija
-            )
-
-            // 💡 LÁMPARA (independiente debajo)
-            Image(
-                painter = painterResource(if (isNight) R.drawable.lamp_off else R.drawable.lamp_on),
-                contentDescription = "Lámpara",
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .size(190.dp) // 👈 ahora puedes subir este valor sin mover la foca
-                    .scale(lampScale)
-                    .clickable { isNight = !isNight }
-                    .padding(bottom = 20.dp),
-                contentScale = ContentScale.Fit
-            )
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
-    }
-}
-
-@Composable
-fun EnergyIconFill(
-    energy: Int,
-    modifier: Modifier = Modifier
-) {
-    val clamped = energy.coerceIn(0, 100)
-    val fillFraction = clamped / 100f
-
-    val fillColor = if (clamped == 0) Color(0xFFFF3B30) else Color(0xFF64FF2B)
-    val ringColor = if (clamped == 0) Color(0xAAFF3B30) else Color(0xAA64FF2B)
-    val baseTint = if (clamped == 0) Color(0x22FF3B30) else Color(0x2200FF00)
-
-    Box(
-        modifier = modifier.size(78.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.matchParentSize()) {
-            val inset = size.minDimension * 0.12f
-            val w = size.width - inset * 2
-            val h = size.height - inset * 2
-
-            drawCircle(
-                color = baseTint,
-                radius = w.coerceAtMost(h) / 2f,
-                center = Offset(size.width / 2f, size.height / 2f)
-            )
-
-            val fillH = h * fillFraction
-            val topLeft = Offset(inset, inset + (h - fillH))
-
-            val r = w.coerceAtMost(h) / 2f
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-
-            val circlePath = Path().apply {
-                addOval(
-                    androidx.compose.ui.geometry.Rect(
-                        left = cx - r,
-                        top = cy - r,
-                        right = cx + r,
-                        bottom = cy + r
+    } else {
+        NavHost(navController = navController, startDestination = "start") {
+            composable("start") {
+                StartScreen(
+                    onPlayClick = { 
+                        if (petData == null) {
+                            navController.navigate("name_entry")
+                        }
+                    },
+                    onContinueClick = { 
+                        if (petData != null) {
+                            navController.navigate("main_game")
+                        }
+                    }
+                )
+            }
+            composable("name_entry") {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                NameScreen(
+                    onSaveName = { name ->
+                        petRepository.savePet(name) { id ->
+                            if (id != null) {
+                                prefsManager.savePetId(id)
+                                petRepository.observePet(id) { data ->
+                                    petData = data
+                                    navController.navigate("main_game") {
+                                        popUpTo("start") { inclusive = true }
+                                    }
+                                }
+                            } else {
+                                android.widget.Toast.makeText(context, "Error al conectar con Firebase.", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                )
+            }
+            composable("main_game") {
+                petData?.let { data ->
+                    MainGameScreen(
+                        petData = data,
+                        petRepository = petRepository,
+                        onEnergyChange = { newEnergy: Int ->
+                            petRepository.updatePet(data.id, mapOf("energy" to newEnergy))
+                        }
                     )
-                )
-            }
-
-            clipPath(circlePath) {
-                drawRect(
-                    color = fillColor,
-                    topLeft = topLeft,
-                    size = Size(w, fillH),
-                    style = Fill
-                )
-            }
-
-            drawArc(
-                color = ringColor,
-                startAngle = -90f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = Size(w, h),
-                style = Stroke(width = size.minDimension * 0.02f, cap = StrokeCap.Round)
-            )
-        }
-
-        Image(
-            painter = painterResource(R.drawable.icon_energy_outline),
-            contentDescription = "Energía",
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Fit
-        )
-
-        Text(
-            text = clamped.toString(),
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Black
-        )
-    }
-}
-
-@Composable
-fun SealPet(
-    isSleeping: Boolean,
-    energy: Int,
-    modifier: Modifier = Modifier
-) {
-    val awakeFrames = listOf(
-        R.drawable.seal_open,
-        R.drawable.seal_half,
-        R.drawable.seal_closed,
-        R.drawable.seal_half,
-        R.drawable.seal_open
-    )
-
-    val sleepFrames = listOf(
-        R.drawable.seal_sleep_1,
-        R.drawable.seal_sleep_2
-    )
-
-    val zeroEnergyFrames = listOf(
-        R.drawable.seal_tired,
-        R.drawable.seal_yawn_1,
-        R.drawable.seal_yawn_2,
-        R.drawable.seal_yawn_1,
-        R.drawable.seal_tired
-    )
-
-    var frameIndex by remember { mutableStateOf(0) }
-
-    LaunchedEffect(isSleeping, energy) { frameIndex = 0 }
-
-    LaunchedEffect(isSleeping, energy) {
-        if (energy == 0) {
-            while (true) {
-                frameIndex = 0; delay(700)
-                frameIndex = 1; delay(250)
-                frameIndex = 2; delay(450)
-                frameIndex = 3; delay(250)
-                frameIndex = 4; delay(650)
-            }
-        } else if (isSleeping) {
-            while (true) {
-                frameIndex = 0; delay(450)
-                frameIndex = 1; delay(450)
-            }
-        } else {
-            while (true) {
-                delay(Random.nextLong(2000, 4000))
-                frameIndex = 1; delay(80)
-                frameIndex = 2; delay(120)
-                frameIndex = 3; delay(80)
-                frameIndex = 4; delay(50)
-                frameIndex = 0
+                }
             }
         }
     }
-
-    val currentRes = when {
-        energy == 0 -> zeroEnergyFrames[frameIndex % zeroEnergyFrames.size]
-        isSleeping -> sleepFrames[frameIndex % sleepFrames.size]
-        else -> awakeFrames[frameIndex % awakeFrames.size]
-    }
-
-    Image(
-        painter = painterResource(currentRes),
-        contentDescription = "Mascota",
-        modifier = modifier,
-        contentScale = ContentScale.Fit,
-        alignment = Alignment.Center
-    )
 }
