@@ -1,5 +1,7 @@
 package com.example.animation.ui.screens
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -16,6 +18,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.animation.R
@@ -29,6 +32,25 @@ fun MainGameScreen(
     onEnergyChange: (Int) -> Unit,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    
+    // Control de orientación dinámica y despertar automático
+    val context = LocalContext.current
+    LaunchedEffect(selectedTab) {
+        val activity = context as? Activity
+        
+        // Despertar si salimos de la pestaña de sueño (tab 1)
+        if (selectedTab != 1 && petData.sleeping) {
+            petRepository.updatePet(petData.id, mapOf("sleeping" to false))
+        }
+
+        if (selectedTab == 2) {
+            // Permitir rotación solo en la pestaña de Diversión
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        } else {
+            // Bloquear en vertical para el resto
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -82,7 +104,7 @@ fun MainGameScreen(
                 2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
                     Text("Pantalla de Diversión") 
                 }
-                3 -> BathScreen(petData = petData)
+                3 -> BathScreen(petData = petData, petRepository = petRepository)
             }
         }
     }

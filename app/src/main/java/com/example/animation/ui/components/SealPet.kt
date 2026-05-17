@@ -4,6 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,7 @@ fun SealPet(
     energy: Int,
     funLevel: Int = 100,
     health: Int = 100,
+    hygiene: Int = 100,
     isMouthOpen: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -49,25 +52,23 @@ fun SealPet(
 
     var frameIndex by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen) { frameIndex = 0 }
+    // Reiniciar frameIndex cuando cambie el estado
+    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen) { 
+        frameIndex = 0 
+    }
 
     LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen) {
+        if (isSleeping) {
+            // Animación de sueño PRIORITARIA: seal_sleep_1 y seal_sleep_2
+            while (true) {
+                frameIndex = 0; delay(600)
+                frameIndex = 1; delay(600)
+            }
+        }
+
         if (isMouthOpen || health <= 0) return@LaunchedEffect
 
         if (energy == 0) {
-            while (true) {
-                frameIndex = 0; delay(700)
-                frameIndex = 1; delay(250)
-                frameIndex = 2; delay(450)
-                frameIndex = 3; delay(250)
-                frameIndex = 4; delay(650)
-            }
-        } else if (isSleeping) {
-            while (true) {
-                frameIndex = 0; delay(450)
-                frameIndex = 1; delay(450)
-            }
-        } else if (funLevel < 15) {
             while (true) {
                 frameIndex = 0; delay(1000)
                 frameIndex = 1; delay(1000)
@@ -85,19 +86,27 @@ fun SealPet(
     }
 
     val currentRes = when {
+        isSleeping -> sleepFrames[frameIndex % sleepFrames.size]
         isMouthOpen -> R.drawable.seal_mouth_open
         health <= 0 -> R.drawable.seal_tired
         energy == 0 -> zeroEnergyFrames[frameIndex % zeroEnergyFrames.size]
-        isSleeping -> sleepFrames[frameIndex % sleepFrames.size]
         funLevel < 15 -> sadFrames[frameIndex % sadFrames.size]
         else -> awakeFrames[frameIndex % awakeFrames.size]
     }
+
+    // Efecto visual de suciedad (Filtro verdoso/café si higiene < 20)
+    val colorFilter = if (hygiene < 20) {
+        ColorFilter.colorMatrix(ColorMatrix().apply {
+            setToScale(0.8f, 0.9f, 0.7f, 1f) // Tinte sucio
+        })
+    } else null
 
     Image(
         painter = painterResource(currentRes),
         contentDescription = "Mascota",
         modifier = modifier,
         contentScale = ContentScale.Fit,
-        alignment = Alignment.Center
+        alignment = Alignment.Center,
+        colorFilter = colorFilter
     )
 }

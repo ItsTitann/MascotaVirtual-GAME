@@ -74,6 +74,7 @@ fun SleepScreen(
                 energy = petData.energy,
                 health = petData.health,
                 funLevel = petData.funLevel,
+                hygiene = petData.hygiene,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .size(600.dp)

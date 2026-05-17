@@ -52,6 +52,7 @@ fun LivingRoomScreen(
                 energy = petData.energy,
                 funLevel = petData.funLevel,
                 health = petData.health,
+                hygiene = petData.hygiene,
                 isMouthOpen = isMouthOpen,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -80,9 +81,16 @@ fun LivingRoomScreen(
                             },
                             onDragEnd = {
                                 if (isMouthOpen) {
-                                    // ¡Se comió el salmón! +5% hambre
-                                    val newHunger = (currentPetData.hunger + 5).coerceIn(0, 100)
-                                    petRepository.updatePet(currentPetData.id, mapOf("hunger" to newHunger))
+                                    // COMER: +25% hambre, -2% higiene
+                                    val newHunger = (currentPetData.hunger + 25).coerceIn(0, 100)
+                                    val newHygiene = (currentPetData.hygiene - 2).coerceIn(0, 100)
+                                    
+                                    petRepository.updatePet(currentPetData.id, mapOf(
+                                        "hunger" to newHunger,
+                                        "hygiene" to newHygiene
+                                    ))
+                                    // Ganar XP por comer
+                                    petRepository.addXp(currentPetData, 5)
                                 }
                                 // El salmón vuelve a su lugar original para ser infinito
                                 salmonOffset = Offset.Zero

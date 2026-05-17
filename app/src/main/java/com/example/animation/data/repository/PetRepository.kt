@@ -55,4 +55,21 @@ class PetRepository {
                 onComplete(task.isSuccessful)
             }
     }
+
+    fun addXp(petData: PetData, amount: Int) {
+        val newXp = petData.xp + amount
+        val xpNeeded = 100 + (petData.level * 50)
+        
+        val updates = mutableMapOf<String, Any>()
+        if (newXp >= xpNeeded) {
+            updates["level"] = petData.level + 1
+            updates["xp"] = newXp - xpNeeded
+            // Bonus por subir de nivel: Curar un poco de salud
+            updates["health"] = (petData.health + 20).coerceAtMost(100)
+        } else {
+            updates["xp"] = newXp
+        }
+        
+        updatePet(petData.id, updates)
+    }
 }

@@ -59,7 +59,7 @@ fun TopStatusBar(
                     horizontalArrangement = Arrangement.End
                 ) {
                     Text(
-                        text = "lvl ${petData.level}",
+                        text = "Nivel ${petData.level}",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
                         color = Color.Black
