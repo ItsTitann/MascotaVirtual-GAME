@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +33,7 @@ fun MainGameScreen(
     onEnergyChange: (Int) -> Unit,
     onNavigateToMenuGames: () -> Unit // Nueva callback
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     
     // Control de despertar automático y bloqueo de orientación
     val context = LocalContext.current

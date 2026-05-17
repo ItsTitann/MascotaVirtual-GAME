@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.animation.R
@@ -29,6 +30,8 @@ fun BathScreen(
     petData: PetData,
     petRepository: PetRepository
 ) {
+    val density = LocalDensity.current
+    
     // --- ESTADOS ---
     var soapOffset by remember { mutableStateOf(Offset.Zero) }
     var showerOffset by remember { mutableStateOf(Offset.Zero) }
@@ -37,53 +40,54 @@ fun BathScreen(
     val foamParticles = remember { mutableStateListOf<Offset>() }
     val waterDrops = remember { mutableStateListOf<WaterDrop>() }
 
+    // Convertimos las unidades de calibración de DP a Píxeles para que sean iguales en todos los teléfonos
+    val xOffsetPx = with(density) { (-100).dp.toPx() } // Ajuste horizontal (-200f aprox)
+    val yStartPx = with(density) { 550.dp.toPx() }     // Origen del agua (1560f aprox)
+    val yCollisionPx = with(density) { 650.dp.toPx() } // Ajuste colisión (1810f aprox)
+
     // --- LÓGICA DE ACTUALIZACIÓN (LOOP) ---
     LaunchedEffect(isShowerOn, showerOffset) {
         if (isShowerOn) {
             while (isShowerOn) {
-                // 1. Generar gotas (Manteniendo las proporciones solicitadas)
+                // 1. Generar gotas basadas en píxeles reales del dispositivo
                 repeat(6) {
                     waterDrops.add(WaterDrop(
-                        x = showerOffset.x - 200f + Random.nextFloat() * 40f - 20f,
-                        y = showerOffset.y + 1560f, 
+                        x = showerOffset.x + xOffsetPx + Random.nextFloat() * 40f - 20f,
+                        y = showerOffset.y + yStartPx, 
                         speed = Random.nextFloat() * 20f + 15f
                     ))
                 }
                 
-                // 2. Mover gotas y detectar colisiones con la espuma
+                // 2. Mover gotas y detectar colisiones
                 val iterator = waterDrops.iterator()
                 while (iterator.hasNext()) {
                     val drop = iterator.next()
                     drop.y += drop.speed
                     
-                    if (drop.y > 2200f) { // Límite de desaparición
+                    if (drop.y > 2500f) { 
                         iterator.remove()
                     } else {
-                        // Detectar colisión con partículas de espuma
                         val foamIterator = foamParticles.iterator()
                         var foamRemoved = false
                         while (foamIterator.hasNext()) {
                             val foamPos = foamIterator.next()
                             
-                            // Usamos tus parámetros de calibración: -200f y -1810f
-                            val dx = (drop.x - 200f) - foamPos.x
-                            val dy = (drop.y - 1810f) - foamPos.y
+                            val dx = (drop.x - xOffsetPx) - foamPos.x
+                            val dy = (drop.y - yCollisionPx) - foamPos.y
                             
-                            // Si la gota toca la espuma (distancia al cuadrado)
-                            if (dx * dx + dy * dy < 3600f) { // Radio un poco más generoso
+                            if (dx * dx + dy * dy < 4000f) { 
                                 foamIterator.remove()
                                 foamRemoved = true
                                 break
                             }
                         }
                         
-                        // Si limpiamos espuma, subimos la higiene en Firebase
                         if (foamRemoved && petData.hygiene < 100) {
                             petRepository.updatePet(petData.id, mapOf("hygiene" to (petData.hygiene + 1).coerceAtMost(100)))
                         }
                     }
                 }
-                delay(16) // ~60 FPS
+                delay(16)
             }
         } else {
             waterDrops.clear()

@@ -204,7 +204,17 @@ fun AppNavigation(petRepository: PetRepository, prefsManager: PrefsManager, noti
                 )
             }
             composable("main_game") {
-                petData?.let { data ->
+                // Mantenemos una referencia persistente a los datos para evitar saltos
+                val lastValidData = remember { mutableStateOf(petData) }
+                
+                LaunchedEffect(petData) {
+                    if (petData != null) {
+                        lastValidData.value = petData
+                    }
+                }
+
+                val data = lastValidData.value
+                if (data != null) {
                     MainGameScreen(
                         petData = data,
                         petRepository = petRepository,
