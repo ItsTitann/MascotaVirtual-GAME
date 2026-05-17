@@ -30,25 +30,21 @@ fun MainGameScreen(
     petData: PetData,
     petRepository: PetRepository,
     onEnergyChange: (Int) -> Unit,
+    onNavigateToMenuGames: () -> Unit // Nueva callback
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     
-    // Control de orientación dinámica y despertar automático
+    // Control de despertar automático y bloqueo de orientación
     val context = LocalContext.current
     LaunchedEffect(selectedTab) {
         val activity = context as? Activity
         
+        // Bloquear SIEMPRE en vertical para todas las pestañas
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
         // Despertar si salimos de la pestaña de sueño (tab 1)
         if (selectedTab != 1 && petData.sleeping) {
             petRepository.updatePet(petData.id, mapOf("sleeping" to false))
-        }
-
-        if (selectedTab == 2) {
-            // Permitir rotación solo en la pestaña de Diversión
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        } else {
-            // Bloquear en vertical para el resto
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
 
@@ -101,9 +97,7 @@ fun MainGameScreen(
             when (selectedTab) {
                 0 -> LivingRoomScreen(petData = petData, petRepository = petRepository)
                 1 -> SleepScreen(petData = petData, petRepository = petRepository, onEnergyChange = onEnergyChange)
-                2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
-                    Text("Pantalla de Diversión") 
-                }
+                2 -> FunScreen(petData = petData, petRepository = petRepository, onNavigateToMenuGames = onNavigateToMenuGames)
                 3 -> BathScreen(petData = petData, petRepository = petRepository)
             }
         }

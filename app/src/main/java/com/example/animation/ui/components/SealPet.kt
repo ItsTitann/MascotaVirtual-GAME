@@ -21,6 +21,7 @@ fun SealPet(
     health: Int = 100,
     hygiene: Int = 100,
     isMouthOpen: Boolean = false,
+    isLaughing: Boolean = false, // Añadido Risa
     modifier: Modifier = Modifier,
 ) {
     // ... frames anteriores ...
@@ -35,6 +36,11 @@ fun SealPet(
     val sleepFrames = listOf(
         R.drawable.seal_sleep_1,
         R.drawable.seal_sleep_2
+    )
+
+    val laughFrames = listOf(
+        R.drawable.seal_laugh, // Imagen de risa
+        R.drawable.seal_open
     )
 
     val zeroEnergyFrames = listOf(
@@ -53,11 +59,19 @@ fun SealPet(
     var frameIndex by remember { mutableIntStateOf(0) }
 
     // Reiniciar frameIndex cuando cambie el estado
-    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen) { 
+    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen, isLaughing) { 
         frameIndex = 0 
     }
 
-    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen) {
+    LaunchedEffect(isSleeping, energy, funLevel, health, isMouthOpen, isLaughing) {
+        if (isLaughing) {
+            // Animación de risa
+            while (true) {
+                frameIndex = 0; delay(150)
+                frameIndex = 1; delay(150)
+            }
+        }
+
         if (isSleeping) {
             // Animación de sueño PRIORITARIA: seal_sleep_1 y seal_sleep_2
             while (true) {
@@ -86,6 +100,7 @@ fun SealPet(
     }
 
     val currentRes = when {
+        isLaughing -> laughFrames[frameIndex % laughFrames.size]
         isSleeping -> sleepFrames[frameIndex % sleepFrames.size]
         isMouthOpen -> R.drawable.seal_mouth_open
         health <= 0 -> R.drawable.seal_tired

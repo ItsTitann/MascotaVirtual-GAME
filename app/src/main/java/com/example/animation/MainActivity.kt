@@ -16,6 +16,7 @@ import com.example.animation.data.local.PrefsManager
 import com.example.animation.data.model.PetData
 import com.example.animation.data.repository.PetRepository
 import com.example.animation.ui.screens.MainGameScreen
+import com.example.animation.ui.screens.MenuGamesScreen
 import com.example.animation.ui.screens.NameScreen
 import com.example.animation.ui.screens.StartScreen
 import com.example.animation.ui.utils.NotificationHelper
@@ -209,9 +210,17 @@ fun AppNavigation(petRepository: PetRepository, prefsManager: PrefsManager, noti
                         petRepository = petRepository,
                         onEnergyChange = { newEnergy: Int ->
                             petRepository.updatePet(data.id, mapOf("energy" to newEnergy))
+                        },
+                        onNavigateToMenuGames = {
+                            navController.navigate("menu_games")
                         }
                     )
                 }
+            }
+            composable("menu_games") {
+                MenuGamesScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }

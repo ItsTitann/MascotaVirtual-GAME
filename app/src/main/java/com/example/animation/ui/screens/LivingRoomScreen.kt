@@ -39,12 +39,9 @@ fun LivingRoomScreen(
             contentScale = ContentScale.Crop
         )
 
-        // Contenedor para foca y comida
+        // Contenedor para foca y comida (Misma estructura que SleepScreen)
         Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(450.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
             // Mascota
             SealPet(
@@ -57,18 +54,18 @@ fun LivingRoomScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .size(600.dp)
-                    .padding(bottom = 10.dp)
+                    .padding(bottom = 60.dp) // Igual que SleepScreen
             )
 
-            // Salmón Draggable (Infinito)
+            // Salmón Draggable (Posición de botón igual que SleepScreen)
             Image(
                 painter = painterResource(id = R.drawable.food_salmon),
                 contentDescription = "Salmón",
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset { IntOffset(salmonOffset.x.roundToInt(), salmonOffset.y.roundToInt()) }
-                    .size(110.dp)
-                    .padding(bottom = 10.dp)
+                    .padding(bottom = 20.dp) // Igual que SleepScreen
+                    .size(130.dp) // Tamaño reducido
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDrag = { change, dragAmount ->
