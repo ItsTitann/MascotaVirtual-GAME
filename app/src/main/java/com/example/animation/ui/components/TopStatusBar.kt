@@ -58,12 +58,36 @@ fun TopStatusBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End
                 ) {
-                    Text(
-                        text = "Nivel ${petData.level}",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Nivel ${petData.level}",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                        // Barra de XP
+                        val xpNeeded = 100 + (petData.level * 50)
+                        val progress = petData.xp.toFloat() / xpNeeded.toFloat()
+                        
+                        androidx.compose.foundation.Canvas(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .height(8.dp)
+                        ) {
+                            // Fondo de la barra
+                            drawRoundRect(
+                                color = Color.Gray.copy(alpha = 0.5f),
+                                size = size,
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
+                            )
+                            // Progreso de XP
+                            drawRoundRect(
+                                color = Color(0xFF4FC3F7), // Un azul claro para la XP
+                                size = size.copy(width = size.width * progress),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.width(10.dp))
                     IconButton(
                         onClick = onSettingsClick,
