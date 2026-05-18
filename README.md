@@ -1,6 +1,22 @@
 # Patroclo - Mascota Virtual 🦭
 
-¡Bienvenido a **Patroclo**, tu nueva mascota virtual! Este proyecto es una aplicación de simulación interactiva desarrollada en Android Studio utilizando **Jetpack Compose** y **Firebase**.
+¡Bienvenido a **Patroclo**, tu nueva mascota virtual! Este proyecto es una herramienta lúdica y educativa desarrollada en Android Studio utilizando **Jetpack Compose** y **Firebase**.
+
+## 🎓 Enfoque Educativo y Responsabilidad Emocional
+
+Más que "solo un juego de focas", este proyecto es una herramienta diseñada para el desarrollo de **hábitos de cuidado y responsabilidad emocional**. 
+
+### El Problema que Resuelve
+Muchos niños y adolescentes enfrentan dificultades para desarrollar constancia y atención hacia las necesidades básicas, tanto propias como ajenas.
+
+### Nuestra Solución: "Aprender a cuidar mediante el juego"
+Patroclo ayuda a fomentar estos valores ya que el usuario debe estar atento de forma constante para:
+*   **Alimentar:** Entender la importancia de la nutrición.
+*   **Limpiar:** Desarrollar hábitos de higiene.
+*   **Entretener:** Comprender la necesidad de bienestar emocional y social.
+*   **Cuidar:** Mantener la constancia para asegurar la salud general de la mascota.
+
+Esta dinámica convierte el juego en una experiencia de aprendizaje sobre la **constancia, la atención y el compromiso**.
 
 ## 🌟 Puntos Clave de la App
 
