@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.example.animation.R
 import com.example.animation.data.model.PetData
 import com.example.animation.data.repository.PetRepository
+import com.example.animation.ui.utils.MusicManager
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.random.Random
@@ -71,12 +72,18 @@ fun PescaEquilibradaScreen(
     var isHit by remember { mutableStateOf(false) }
     var difficultyMultiplier by remember { mutableFloatStateOf(1f) }
 
-    // Forzar orientación LANDSCAPE
+    // Forzar orientación LANDSCAPE y manejar música
     DisposableEffect(Unit) {
         val activity = context as? Activity
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        
+        // Cambiar a música de pesca
+        MusicManager.playMusic(context, R.raw.bgm_fishing)
+        
         onDispose {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            // Volver a música general al salir
+            MusicManager.playMusic(context, R.raw.bgm_main)
         }
     }
 
@@ -154,18 +161,29 @@ fun PescaEquilibradaScreen(
                 val distanceX = abs(obj.x - focaX)
                 val distanceY = abs((screenHeight - 80f) - obj.y)
 
-                if (distanceX < 75f && distanceY < 75f) {
+                // Umbral general de colisión
+                var collisionThreshold = 65f
+                
+                // Si es una medusa, hacemos la caja de colisión más pequeña para ser más justos
+                if (obj.type == GameObjectType.JELLYFISH) {
+                    collisionThreshold = 45f 
+                }
+
+                if (distanceX < collisionThreshold && distanceY < collisionThreshold) {
                     when (obj.type) {
                         GameObjectType.FISH -> {
                             score++
                             energyRemaining = (energyRemaining + 2f).coerceAtMost(100f)
+                            MusicManager.playSound(context, R.raw.sfx_eat)
                         }
                         GameObjectType.JELLYFISH -> {
                             energyRemaining -= 15f
                             isHit = true
+                            MusicManager.playSound(context, R.raw.sfx_hit)
                         }
                         GameObjectType.ENERGY -> {
                             energyRemaining = (energyRemaining + 20f).coerceAtMost(100f)
+                            MusicManager.playSound(context, R.raw.sfx_energy)
                         }
                     }
                     iterator.remove()

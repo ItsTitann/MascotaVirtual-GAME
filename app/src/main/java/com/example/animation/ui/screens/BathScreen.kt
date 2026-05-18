@@ -1,5 +1,6 @@
 package com.example.animation.ui.screens
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -14,6 +15,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.animation.R
@@ -21,6 +23,7 @@ import com.example.animation.data.model.PetData
 import com.example.animation.data.repository.PetRepository
 import com.example.animation.ui.components.SealPet
 import com.example.animation.ui.components.TopStatusBar
+import com.example.animation.ui.utils.MusicManager
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -28,14 +31,49 @@ import kotlin.random.Random
 @Composable
 fun BathScreen(
     petData: PetData,
-    petRepository: PetRepository
+    petRepository: PetRepository,
+    onSettingsClick: () -> Unit
 ) {
     val density = LocalDensity.current
+    val context = LocalContext.current
     
     // --- ESTADOS ---
     var soapOffset by remember { mutableStateOf(Offset.Zero) }
     var showerOffset by remember { mutableStateOf(Offset.Zero) }
     var isShowerOn by remember { mutableStateOf(false) }
+    
+    // Gestor de sonido para la regadera
+    val showerMediaPlayer = remember {
+        MediaPlayer.create(context, R.raw.sfx_shower).apply {
+            isLooping = true
+            setVolume(MusicManager.sfxVolume, MusicManager.sfxVolume)
+        }
+    }
+
+    // Actualizar volumen de la regadera si cambia el sfxVolume global
+    LaunchedEffect(MusicManager.sfxVolume) {
+        showerMediaPlayer.setVolume(MusicManager.sfxVolume, MusicManager.sfxVolume)
+    }
+
+    // Limpiar el reproductor al salir de la pantalla
+    DisposableEffect(Unit) {
+        onDispose {
+            showerMediaPlayer.stop()
+            showerMediaPlayer.release()
+        }
+    }
+
+    // Controlar el inicio/fin del sonido basado en isShowerOn
+    LaunchedEffect(isShowerOn) {
+        if (isShowerOn) {
+            showerMediaPlayer.start()
+        } else {
+            if (showerMediaPlayer.isPlaying) {
+                showerMediaPlayer.pause()
+                showerMediaPlayer.seekTo(0) // Reiniciar para la próxima vez
+            }
+        }
+    }
     
     val foamParticles = remember { mutableStateListOf<Offset>() }
     val waterDrops = remember { mutableStateListOf<WaterDrop>() }
@@ -213,7 +251,7 @@ fun BathScreen(
         }
 
         // 5. Barra de Estado Superior
-        TopStatusBar(petData = petData)
+        TopStatusBar(petData = petData, onSettingsClick = onSettingsClick)
     }
 }
 

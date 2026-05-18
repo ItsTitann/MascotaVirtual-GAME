@@ -15,18 +15,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import com.example.animation.R
 import com.example.animation.data.model.PetData
 import com.example.animation.data.repository.PetRepository
 import com.example.animation.ui.components.SealPet
 import com.example.animation.ui.components.TopStatusBar
+import com.example.animation.ui.utils.MusicManager
 import kotlinx.coroutines.delay
 
 @Composable
 fun SleepScreen(
     petData: PetData,
     petRepository: PetRepository,
-    onEnergyChange: (Int) -> Unit
+    onEnergyChange: (Int) -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     // Usamos un estado local para que la respuesta visual sea instantánea al pulsar
     var localIsSleeping by remember { mutableStateOf(petData.sleeping) }
@@ -37,6 +40,23 @@ fun SleepScreen(
     }
 
     val isNight = localIsSleeping
+    val context = LocalContext.current
+
+    // Gestión de música basada en el estado de la lámpara
+    LaunchedEffect(isNight) {
+        if (isNight) {
+            MusicManager.playMusic(context, R.raw.bgm_sleep)
+        } else {
+            MusicManager.playMusic(context, R.raw.bgm_main)
+        }
+    }
+
+    // Asegurar que la música general vuelva si salimos de la pantalla mientras duerme
+    DisposableEffect(Unit) {
+        onDispose {
+            MusicManager.playMusic(context, R.raw.bgm_main)
+        }
+    }
 
     val backgroundRes = if (isNight) R.drawable.background_night else R.drawable.background_day
 
@@ -107,6 +127,6 @@ fun SleepScreen(
         }
 
         // Header y Barra de estados reutilizable
-        TopStatusBar(petData = petData)
+        TopStatusBar(petData = petData, onSettingsClick = onSettingsClick)
     }
 }

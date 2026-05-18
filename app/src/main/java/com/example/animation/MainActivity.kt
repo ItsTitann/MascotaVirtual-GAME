@@ -18,9 +18,11 @@ import com.example.animation.data.repository.PetRepository
 import com.example.animation.ui.screens.MainGameScreen
 import com.example.animation.ui.screens.MenuGamesScreen
 import com.example.animation.ui.screens.PescaEquilibradaScreen
+import com.example.animation.ui.screens.SettingsScreen
 import com.example.animation.ui.screens.NameScreen
 import com.example.animation.ui.screens.StartScreen
 import com.example.animation.ui.utils.NotificationHelper
+import com.example.animation.ui.utils.MusicManager
 import com.google.firebase.database.ServerValue
 
 class MainActivity : ComponentActivity() {
@@ -32,6 +34,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         prefsManager = PrefsManager(this)
         notificationHelper = NotificationHelper(this)
+        
+        // Iniciar música de fondo general
+        MusicManager.playMusic(this, R.raw.bgm_main)
         
         setContent {
             // Pedir permiso de notificaciones en Android 13+
@@ -46,6 +51,21 @@ class MainActivity : ComponentActivity() {
 
             AppNavigation(petRepository, prefsManager, notificationHelper)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        MusicManager.pauseMusic()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        MusicManager.resumeMusic()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        MusicManager.stopMusic()
     }
 }
 
@@ -224,9 +244,15 @@ fun AppNavigation(petRepository: PetRepository, prefsManager: PrefsManager, noti
                         },
                         onNavigateToMenuGames = {
                             navController.navigate("menu_games")
+                        },
+                        onNavigateToSettings = {
+                            navController.navigate("settings")
                         }
                     )
                 }
+            }
+            composable("settings") {
+                SettingsScreen(onBack = { navController.popBackStack() })
             }
             composable("menu_games") {
                 MenuGamesScreen(

@@ -31,7 +31,8 @@ fun MainGameScreen(
     petData: PetData,
     petRepository: PetRepository,
     onEnergyChange: (Int) -> Unit,
-    onNavigateToMenuGames: () -> Unit // Nueva callback
+    onNavigateToMenuGames: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     
@@ -96,10 +97,10 @@ fun MainGameScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                0 -> LivingRoomScreen(petData = petData, petRepository = petRepository)
-                1 -> SleepScreen(petData = petData, petRepository = petRepository, onEnergyChange = onEnergyChange)
-                2 -> FunScreen(petData = petData, petRepository = petRepository, onNavigateToMenuGames = onNavigateToMenuGames)
-                3 -> BathScreen(petData = petData, petRepository = petRepository)
+                0 -> LivingRoomScreen(petData = petData, petRepository = petRepository, onSettingsClick = onNavigateToSettings)
+                1 -> SleepScreen(petData = petData, petRepository = petRepository, onEnergyChange = onEnergyChange, onSettingsClick = onNavigateToSettings)
+                2 -> FunScreen(petData = petData, petRepository = petRepository, onNavigateToMenuGames = onNavigateToMenuGames, onSettingsClick = onNavigateToSettings)
+                3 -> BathScreen(petData = petData, petRepository = petRepository, onSettingsClick = onNavigateToSettings)
             }
         }
     }

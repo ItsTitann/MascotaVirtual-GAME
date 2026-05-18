@@ -25,7 +25,8 @@ import com.example.animation.ui.components.TopStatusBar
 fun FunScreen(
     petData: PetData,
     petRepository: PetRepository,
-    onNavigateToMenuGames: () -> Unit
+    onNavigateToMenuGames: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
     var isLaughing by remember { mutableStateOf(false) }
@@ -142,6 +143,6 @@ fun FunScreen(
         }
 
         // Header superior
-        TopStatusBar(petData = petData)
+        TopStatusBar(petData = petData, onSettingsClick = onSettingsClick)
     }
 }

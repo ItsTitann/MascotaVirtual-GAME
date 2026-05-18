@@ -17,15 +17,19 @@ import com.example.animation.data.model.PetData
 import com.example.animation.data.repository.PetRepository
 import com.example.animation.ui.components.SealPet
 import com.example.animation.ui.components.TopStatusBar
+import com.example.animation.ui.utils.MusicManager
+import androidx.compose.ui.platform.LocalContext
 import kotlin.math.roundToInt
 
 @Composable
 fun LivingRoomScreen(
     petData: PetData,
-    petRepository: PetRepository
+    petRepository: PetRepository,
+    onSettingsClick: () -> Unit
 ) {
     var salmonOffset by remember { mutableStateOf(Offset.Zero) }
     var isMouthOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     // Usamos rememberUpdatedState para que el lambda de pointerInput siempre use el valor más reciente
     val currentPetData by rememberUpdatedState(petData)
@@ -88,6 +92,9 @@ fun LivingRoomScreen(
                                     ))
                                     // Ganar XP por comer
                                     petRepository.addXp(currentPetData, 5)
+                                    
+                                    // Reproducir sonido de comer
+                                    MusicManager.playSound(context, R.raw.sfx_eat)
                                 }
                                 // El salmón vuelve a su lugar original para ser infinito
                                 salmonOffset = Offset.Zero
@@ -100,6 +107,6 @@ fun LivingRoomScreen(
         }
 
         // Header y Barra de estados reutilizable
-        TopStatusBar(petData = petData)
+        TopStatusBar(petData = petData, onSettingsClick = onSettingsClick)
     }
 }
